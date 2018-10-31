@@ -6,6 +6,8 @@ DCOS_GENERATE_CONFIG_URL=https://downloads.dcos.io/dcos/stable/${DCOS_VERSION}/d
 export DCOS_GENERATE_CONFIG_PATH=installers/dcos/dcos_generate_config-${DCOS_VERSION}.sh
 export DCOS_CONFIG_PATH=etc/config.yaml
 export DCOS_PRIVATE_REGISTRY=true
+export DCOS_PRIVATE_REGISTRY_MIRROR=true
+export DCOS_PRIVATE_REGISTRY_VOLUME=data/registry
 export DCOS_JAVA_ENABLED=false
 
 if [ ! -f "${DCOS_GENERATE_CONFIG_PATH}" ]; then

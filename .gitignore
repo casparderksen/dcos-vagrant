@@ -9,3 +9,5 @@ dcos_generate_config*.sh
 /installers
 /test-junit.xml
 /*.log
+
+/data/registry/*

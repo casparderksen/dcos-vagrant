@@ -64,6 +64,9 @@ There are several configurable options when deploying a cluster and installing D
     - `web` - Use the GUI DC/OS installation method (`dcos_generate_config.sh --web`). WARNING: Does not (yet) support agent-public nodes!
 - `DCOS_JAVA_ENABLED` - Boolean to install java on each agent (default: `false`).  If you set this to true, ensure that there is a JRE install file in your `provision` folder whose name matches `jre-*-linux-x64.*`
 - `DCOS_PRIVATE_REGISTRY` - Boolean to install an insecure [private Docker registry](/examples/private-registry.md) on the boot machine and configure the agents to allow it (default: `false`)
+- `DCOS_PRIVATE_REGISTRY_MIRROR` - Boolean to configure the [private Docker registry](/examples/private-registry.md) as a [pull-through cache](https://docs.docker.com/registry/recipes/mirror/).
+- `DCOS_PRIVATE_REGISTRY_CONFIG_PATH` - Path to a [private Docker registry configuration](https://docs.docker.com/registry/configuration/) file (default: `provision/etc/registry_config.yaml`). Only used when the private registry is configured as mirror.
+- `DCOS_PRIVATE_REGISTRY_VOLUME` - Path to a directory to be mounted as persistent volume for the registry (default: unset).
 - `DCOS_VAGRANT_MOUNT_METHOD` - One of the following methods (default: `virtualbox`):
     - `virtualbox` - Use cross-platform [VirtualBox shared folders](https://www.vagrantup.com/docs/synced-folders/virtualbox.html)
     - `nfs` - Use faster [NFS shared folders](https://www.vagrantup.com/docs/synced-folders/nfs.html).

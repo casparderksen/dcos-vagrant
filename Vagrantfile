@@ -63,22 +63,28 @@ class UserConfig
   attr_accessor :vagrant_mount_method
   attr_accessor :java_enabled
   attr_accessor :private_registry
+  attr_accessor :private_registry_mirror
+  attr_accessor :private_registry_config_path
+  attr_accessor :private_registry_volume
   attr_accessor :license_key_contents
 
   def self.from_env
     c = new
-    c.box                  = ENV.fetch(env_var('box'), 'mesosphere/dcos-centos-virtualbox')
-    c.box_url              = ENV.fetch(env_var('box_url'), 'https://downloads.dcos.io/dcos-vagrant/metadata.json')
-    c.box_version          = ENV.fetch(env_var('box_version'), '~> 0.9.2')
-    c.machine_config_path  = ENV.fetch(env_var('machine_config_path'), 'VagrantConfig.yaml')
-    c.config_path          = ENV.fetch(env_var('config_path'), '')
-    c.version              = ENV.fetch(env_var('version'), '')
-    c.generate_config_path = ENV.fetch(env_var('generate_config_path'), '')
-    c.install_method       = ENV.fetch(env_var('install_method'), 'ssh_pull')
-    c.license_key_contents = ENV.fetch(env_var('license_key_contents'), '')
-    c.vagrant_mount_method = ENV.fetch(env_var('vagrant_mount_method'), 'virtualbox')
-    c.java_enabled         = (ENV.fetch(env_var('java_enabled'), 'false') == 'true')
-    c.private_registry     = (ENV.fetch(env_var('private_registry'), 'false') == 'true')
+    c.box                          = ENV.fetch(env_var('box'), 'mesosphere/dcos-centos-virtualbox')
+    c.box_url                      = ENV.fetch(env_var('box_url'), 'https://downloads.dcos.io/dcos-vagrant/metadata.json')
+    c.box_version                  = ENV.fetch(env_var('box_version'), '~> 0.9.2')
+    c.machine_config_path          = ENV.fetch(env_var('machine_config_path'), 'VagrantConfig.yaml')
+    c.config_path                  = ENV.fetch(env_var('config_path'), '')
+    c.version                      = ENV.fetch(env_var('version'), '')
+    c.generate_config_path         = ENV.fetch(env_var('generate_config_path'), '')
+    c.install_method               = ENV.fetch(env_var('install_method'), 'ssh_pull')
+    c.license_key_contents         = ENV.fetch(env_var('license_key_contents'), '')
+    c.vagrant_mount_method         = ENV.fetch(env_var('vagrant_mount_method'), 'virtualbox')
+    c.java_enabled                 = (ENV.fetch(env_var('java_enabled'), 'false') == 'true')
+    c.private_registry             = (ENV.fetch(env_var('private_registry'), 'false') == 'true')
+    c.private_registry_mirror      = (ENV.fetch(env_var('private_registry_mirror'), 'false') == 'true')
+    c.private_registry_config_path = ENV.fetch(env_var('private_registry_config_path'), 'provision/etc/registry_config.yaml')
+    c.private_registry_volume      = ENV.fetch(env_var('private_registry_volume'), '')
     c
   end
 
@@ -118,11 +124,22 @@ class UserConfig
       errors << "Config path (#{UserConfig.env_var('config_path')}) must be specified when installer (#{UserConfig.env_var('generate_config_path')}) is specified."
     end
 
+    # Validate registry volume
+    unless @private_registry_volume.empty?
+      if @private_registry_volume.start_with?(File::SEPARATOR)
+        errors << "Directory path not relative: '#{private_registry_volume}'. Ensure that the path is relative to the repo directory."
+      end
+      if !File.directory?(@private_registry_volume)
+        errors << "Directory does not exist: '#{private_registry_volume}'."
+      end
+    end
+
     # Validate required files
     required_files = []
     required_files << :machine_config_path if !@machine_config_path.empty?
     required_files << :config_path if !@config_path.empty?
     required_files << :generate_config_path if !@config_path.empty?
+    required_files << :private_registry_config_path if !@private_registry_config_path.empty?
 
     required_files.each do |field_name|
       file_path = send(field_name.to_sym)
@@ -150,7 +167,10 @@ class UserConfig
       'DCOS_GENERATE_CONFIG_PATH' => UserConfig.path_to_url(@generate_config_path),
       'DCOS_LICENSE_KEY_CONTENTS' => UserConfig.path_to_url(@license_key_contents),
       'DCOS_JAVA_ENABLED' => @java_enabled ? 'true' : 'false',
-      'DCOS_PRIVATE_REGISTRY' => @private_registry ? 'true' : 'false'
+      'DCOS_PRIVATE_REGISTRY' => @private_registry ? 'true' : 'false',
+      'DCOS_PRIVATE_REGISTRY_MIRROR' => @private_registry_mirror ? 'true' : 'false',
+      'DCOS_PRIVATE_REGISTRY_CONFIG_PATH' => UserConfig.path_to_url(@private_registry_config_path),
+      'DCOS_PRIVATE_REGISTRY_VOLUME' => "/vagrant/#{private_registry_volume}"
     }
     if machine_type['memory-reserved']
       env['DCOS_TASK_MEMORY'] = machine_type['memory'] - machine_type['memory-reserved']
@@ -508,6 +528,7 @@ Vagrant.configure(2) do |config|
         machine.vm.provision :shell do |vm|
           vm.name = 'Start Private Docker Registry'
           vm.path = provision_script_path('insecure-registry')
+          vm.env = user_config.provision_env(machine_type)
         end
       end
 

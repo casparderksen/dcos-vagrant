@@ -18,12 +18,26 @@ else
   echo ">>> Found nginx container running"
 fi
 
+# Optionally create private registry configuration for running a pull-through cache
+REGISTRY_OPTIONS=
+if [ "${DCOS_PRIVATE_REGISTRY_MIRROR}" == "true" ]; then
+  echo ">>> Downloading registry config (for configuring a registry cache)"
+  curl --fail --silent --show-error "${DCOS_PRIVATE_REGISTRY_CONFIG_PATH}" > /etc/docker/registry_config.yml
+  REGISTRY_OPTIONS+=" -v /etc/docker/registry_config.yml:/etc/docker/registry/config.yml"
+fi
+
+# Optionally configure persistent volume for registry data
+if [ ! -z "${DCOS_PRIVATE_REGISTRY_VOLUME}" ]; then
+  echo ">>> Mounting registry persistent volume: ${DCOS_PRIVATE_REGISTRY_VOLUME}"
+  REGISTRY_OPTIONS+=" -v ${DCOS_PRIVATE_REGISTRY_VOLUME}:/var/lib/registry"
+fi
+
 # Provide a local docker registry for testing purposes. Agents will also get
 # the boot node allowed as an insecure registry.
 if [ "${DCOS_PRIVATE_REGISTRY}" == "true" ]; then
   if [ "$(docker inspect -f '{{.State.Running}}' registry-boot)" != "true" ]; then
     echo ">>> Starting private docker registry"
-    docker run -d --name=registry-boot -p 5000:5000 --restart=always registry:2
+    docker run -d --name=registry-boot -p 5000:5000 --restart=always ${REGISTRY_OPTIONS} registry:2
   else
     echo ">>> Found registry container running"
   fi
