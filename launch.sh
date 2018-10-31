@@ -15,6 +15,3 @@ fi
 
 echo "Provisioning cluster using ${DCOS_CONFIG_PATH}"
 vagrant up
-
-echo "Suspending boot node"
-vagrant suspend boot
