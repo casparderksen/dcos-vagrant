@@ -11,6 +11,14 @@ Deploying DC/OS Vagrant involves creating a local cluster of VirtualBox VMs usin
 - Issue tracking is in [DCOS JIRA](https://jira.mesosphere.com/projects/DCOS_VAGRANT/).
 - Remember to make a DC/OS JIRA account and login so you can get update notifications!
 
+# Differences from dcos/dcos-vagrant
+
+This project deviates from the upstream [dcos/dcos-vagrant](https://github.com/dcos/dcos-vagrant) project in the following ways:
+1. Launch script and configuration files for my local development environment (adapt for yours).
+1. Enable configuration of the private registry:
+    - persistent volume for registry data (survives rebuild of the VMs)
+    - mirror (pull-through cache) of Docker Hub and other registries (no repeated image downloads)
+    - adaptable external configuration file for the registry (e.g. for TLS and additional hub caches)
 
 # Quick Start
 
